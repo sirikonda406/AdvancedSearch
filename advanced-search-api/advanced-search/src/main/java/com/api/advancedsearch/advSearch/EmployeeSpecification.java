@@ -2,9 +2,10 @@ package com.api.advancedsearch.advSearch;
 
 import com.api.advancedsearch.domain.Department;
 import com.api.advancedsearch.domain.Employee;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
-import javax.persistence.criteria.*;
+import jakarta.persistence.*;
 import java.util.Objects;
 
 public class EmployeeSpecification implements Specification<Employee> {

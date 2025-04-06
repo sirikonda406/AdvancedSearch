@@ -1,0 +1,25 @@
+{
+  "id":"123",
+  "ids":[
+    "123",
+    "456"
+  ],
+  "state":"active",
+  "states":[
+    "active",
+    "inactive"
+  ],
+  "counting":{
+    "countMode":"exact",
+    "countLimit":10,
+    "countHint":5
+  },
+  "paging":{
+    "offset":0,
+    "size":10
+  },
+  "sorting":{
+    "sortColumn":"name",
+    "sortAscending":true
+  }
+}

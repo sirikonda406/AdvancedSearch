@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.6.3</version>
+		<version>3.3.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.api</groupId>
@@ -13,9 +13,6 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>advanced-search</name>
 	<description>Demo Project for Advanced Search and Filtering using JPA Criteria API</description>
-	<properties>
-		<java.version>11</java.version>
-	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
