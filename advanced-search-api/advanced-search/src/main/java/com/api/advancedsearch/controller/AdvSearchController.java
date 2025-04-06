@@ -43,10 +43,9 @@ public class AdvSearchController {
         SpecificationBuilder<Employee> builder = new SpecificationBuilder<>();
         List<SearchCriteria> criteriaList = employeeSearchDto.getSearchCriteriaList();
         if(criteriaList != null){
-            criteriaList.forEach(x-> {x.setDataOption(employeeSearchDto.getDataOption());
-                                        builder.with(x);
+            criteriaList.forEach(searchCriteria-> {searchCriteria.setDataOption(employeeSearchDto.getDataOption());
+                                        builder.with(searchCriteria);
             });
-
         }
 
         Pageable page = PageRequest.of(pageNum, pageSize, Sort.by("empfirstNm")

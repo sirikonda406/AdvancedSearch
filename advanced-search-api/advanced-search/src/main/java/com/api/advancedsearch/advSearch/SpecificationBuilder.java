@@ -26,7 +26,7 @@ public class SpecificationBuilder<T> {
 
     public Specification<T> build(Map<String, String> fieldMappings) {
         if (params.isEmpty()) {
-            return null;
+            return Specification.where(null); // Returns all results
         }
 
         Specification<T> result = new GenericSpecification<>(params.get(0), fieldMappings);

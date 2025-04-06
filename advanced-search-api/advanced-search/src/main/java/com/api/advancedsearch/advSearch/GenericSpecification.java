@@ -47,7 +47,8 @@ public class GenericSpecification<T> implements Specification<T> {
             case GREATER_THAN_EQUAL -> cb.greaterThanOrEqualTo(path.as(String.class), stringValue);
             case LESS_THAN -> cb.lessThan(path.as(String.class), stringValue);
             case LESS_THAN_EQUAL -> cb.lessThanOrEqualTo(path.as(String.class), stringValue);
-            default -> throw new UnsupportedOperationException("Unhandled operation type: " + operation);
+            default -> null;
+
         };
     }
 
@@ -56,17 +57,15 @@ public class GenericSpecification<T> implements Specification<T> {
      * This determines whether the field belongs to the root entity (Employee) or is part of a related entity (e.g., Department).
      */
     private Path<?> resolvePath(Root<T> root, String filterKey) {
-        // Map of related entities and their corresponding root joins, dynamic enough to add more fields in the future
-       /* Map<String, String> fieldMappings = Map.of("deptName", "department" // Example of supporting multiple related field mappings
-        );*/
-
         if (fieldMappings.containsKey(filterKey)) {
             Join<T, ?> join = root.join(fieldMappings.get(filterKey));
             return join.get(filterKey);
+        } else if (root.getModel().getAttributes().stream().anyMatch(a -> a.getName().equals(filterKey))) {
+            return root.get(filterKey);
+        } else {
+            throw new IllegalArgumentException("Invalid filter key: " + filterKey);
         }
 
-        // Default case: Assume that the field is part of the Employee entity
-        return root.get(filterKey);
     }
 }
 
