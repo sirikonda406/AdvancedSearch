@@ -32,24 +32,86 @@ public class GenericSpecification<T> implements Specification<T> {
     }
 
     private Predicate buildPredicate(SearchOperation operation, CriteriaBuilder cb, Path<?> path, String stringValue, Object originalValue) {
+        Class<?> javaType = path.getJavaType(); // Determine the Java type of the path dynamically
+
         return switch (operation) {
-            case CONTAINS -> cb.like(cb.lower(path.as(String.class)), WILDCARD + stringValue + WILDCARD);
-            case DOES_NOT_CONTAIN -> cb.notLike(cb.lower(path.as(String.class)), WILDCARD + stringValue + WILDCARD);
-            case BEGINS_WITH -> cb.like(cb.lower(path.as(String.class)), stringValue + WILDCARD);
-            case DOES_NOT_BEGIN_WITH -> cb.notLike(cb.lower(path.as(String.class)), stringValue + WILDCARD);
-            case ENDS_WITH -> cb.like(cb.lower(path.as(String.class)), WILDCARD + stringValue);
-            case DOES_NOT_END_WITH -> cb.notLike(cb.lower(path.as(String.class)), WILDCARD + stringValue);
+            case CONTAINS -> {
+                if (javaType.equals(String.class)) {
+                    yield cb.like(cb.lower(path.as(String.class)), WILDCARD + stringValue + WILDCARD);
+                } else {
+                    throw new IllegalArgumentException("CONTAINS operation is only applicable for String fields.");
+                }
+            }
+            case DOES_NOT_CONTAIN -> {
+                if (javaType.equals(String.class)) {
+                    yield cb.notLike(cb.lower(path.as(String.class)), WILDCARD + stringValue + WILDCARD);
+                } else {
+                    throw new IllegalArgumentException("DOES_NOT_CONTAIN operation is only applicable for String fields.");
+                }
+            }
+            case BEGINS_WITH -> {
+                if (javaType.equals(String.class)) {
+                    yield cb.like(cb.lower(path.as(String.class)), stringValue + WILDCARD);
+                } else {
+                    throw new IllegalArgumentException("BEGINS_WITH operation is only applicable for String fields.");
+                }
+            }
+            case DOES_NOT_BEGIN_WITH -> {
+                if (javaType.equals(String.class)) {
+                    yield cb.notLike(cb.lower(path.as(String.class)), stringValue + WILDCARD);
+                } else {
+                    throw new IllegalArgumentException("DOES_NOT_BEGIN_WITH operation is only applicable for String fields.");
+                }
+            }
+            case ENDS_WITH -> {
+                if (javaType.equals(String.class)) {
+                    yield cb.like(cb.lower(path.as(String.class)), WILDCARD + stringValue);
+                } else {
+                    throw new IllegalArgumentException("ENDS_WITH operation is only applicable for String fields.");
+                }
+            }
+            case DOES_NOT_END_WITH -> {
+                if (javaType.equals(String.class)) {
+                    yield cb.notLike(cb.lower(path.as(String.class)), WILDCARD + stringValue);
+                } else {
+                    throw new IllegalArgumentException("DOES_NOT_END_WITH operation is only applicable for String fields.");
+                }
+            }
             case EQUAL -> cb.equal(path, originalValue);
             case NOT_EQUAL -> cb.notEqual(path, originalValue);
             case NUL -> cb.isNull(path);
             case NOT_NULL -> cb.isNotNull(path);
-            case GREATER_THAN -> cb.greaterThan(path.as(String.class), stringValue);
-            case GREATER_THAN_EQUAL -> cb.greaterThanOrEqualTo(path.as(String.class), stringValue);
-            case LESS_THAN -> cb.lessThan(path.as(String.class), stringValue);
-            case LESS_THAN_EQUAL -> cb.lessThanOrEqualTo(path.as(String.class), stringValue);
-            default -> null;
-
+            case GREATER_THAN -> {
+                if (Comparable.class.isAssignableFrom(javaType)) {
+                    yield cb.greaterThan(path.as(Comparable.class), (Comparable) originalValue);
+                } else {
+                    throw new IllegalArgumentException("GREATER_THAN operation is applicable only for Comparable fields.");
+                }
+            }
+            case GREATER_THAN_EQUAL -> {
+                if (Comparable.class.isAssignableFrom(javaType)) {
+                    yield cb.greaterThanOrEqualTo(path.as(Comparable.class), (Comparable) originalValue);
+                } else {
+                    throw new IllegalArgumentException("GREATER_THAN_EQUAL operation is applicable only for Comparable fields.");
+                }
+            }
+            case LESS_THAN -> {
+                if (Comparable.class.isAssignableFrom(javaType)) {
+                    yield cb.lessThan(path.as(Comparable.class), (Comparable) originalValue);
+                } else {
+                    throw new IllegalArgumentException("LESS_THAN operation is applicable only for Comparable fields.");
+                }
+            }
+            case LESS_THAN_EQUAL -> {
+                if (Comparable.class.isAssignableFrom(javaType)) {
+                    yield cb.lessThanOrEqualTo(path.as(Comparable.class), (Comparable) originalValue);
+                } else {
+                    throw new IllegalArgumentException("LESS_THAN_EQUAL operation is applicable only for Comparable fields.");
+                }
+            }
+            default -> throw new UnsupportedOperationException("Unsupported operation: " + operation);
         };
+
     }
 
     /**
