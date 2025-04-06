@@ -1,11 +1,10 @@
 package com.api.advancedsearch.advSearch;
 
-import com.api.advancedsearch.domain.Department;
 import com.api.advancedsearch.domain.Employee;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
-import jakarta.persistence.*;
+import java.util.Map;
 import java.util.Objects;
 
 public class EmployeeSpecification implements Specification<Employee> {
@@ -19,82 +18,61 @@ public class EmployeeSpecification implements Specification<Employee> {
 
     @Override
     public Predicate toPredicate(Root<Employee> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
-
         String strToSearch = searchCriteria.getValue().toString().toLowerCase();
 
-        switch(Objects.requireNonNull(SearchOperation.getSimpleOperation(searchCriteria.getOperation()))){
+        // Determine the correct attribute path based on the filterKey
+        Path<?> path = resolvePath(root, searchCriteria.getFilterKey());
+
+        switch (Objects.requireNonNull(SearchOperation.getSimpleOperation(searchCriteria.getOperation()))) {
             case CONTAINS:
-                if(searchCriteria.getFilterKey().equals("deptName")){
-                    return cb.like(cb.lower(departmentJoin(root).<String>get(searchCriteria.getFilterKey())), "%" + strToSearch + "%");
-                }
-                return cb.like(cb.lower(root.get(searchCriteria.getFilterKey())), "%" + strToSearch + "%");
-
+                return cb.like(cb.lower(path.as(String.class)), "%" + strToSearch + "%");
             case DOES_NOT_CONTAIN:
-                if(searchCriteria.getFilterKey().equals("deptName")){
-                    return cb.notLike(cb.lower(departmentJoin(root).<String>get(searchCriteria.getFilterKey())), "%" + strToSearch + "%");
-                }
-                return cb.notLike(cb.lower(root.get(searchCriteria.getFilterKey())), "%" + strToSearch + "%");
-
+                return cb.notLike(cb.lower(path.as(String.class)), "%" + strToSearch + "%");
             case BEGINS_WITH:
-                if(searchCriteria.getFilterKey().equals("deptName")){
-                    return cb.like(cb.lower(departmentJoin(root).<String>get(searchCriteria.getFilterKey())), strToSearch + "%");
-                }
-                return cb.like(cb.lower(root.get(searchCriteria.getFilterKey())), strToSearch + "%");
-
+                return cb.like(cb.lower(path.as(String.class)), strToSearch + "%");
             case DOES_NOT_BEGIN_WITH:
-                if(searchCriteria.getFilterKey().equals("deptName")){
-                    return cb.notLike(cb.lower(departmentJoin(root).<String>get(searchCriteria.getFilterKey())), strToSearch + "%");
-                }
-                return cb.notLike(cb.lower(root.get(searchCriteria.getFilterKey())), strToSearch + "%");
-
+                return cb.notLike(cb.lower(path.as(String.class)), strToSearch + "%");
             case ENDS_WITH:
-                if(searchCriteria.getFilterKey().equals("deptName")){
-                    return cb.like(cb.lower(departmentJoin(root).<String>get(searchCriteria.getFilterKey())), "%" + strToSearch);
-                }
-                return cb.like(cb.lower(root.get(searchCriteria.getFilterKey())), "%" + strToSearch);
-
+                return cb.like(cb.lower(path.as(String.class)), "%" + strToSearch);
             case DOES_NOT_END_WITH:
-                if(searchCriteria.getFilterKey().equals("deptName")){
-                    return cb.notLike(cb.lower(departmentJoin(root).<String>get(searchCriteria.getFilterKey())), "%" + strToSearch);
-                }
-                return cb.notLike(cb.lower(root.get(searchCriteria.getFilterKey())), "%" + strToSearch);
-
+                return cb.notLike(cb.lower(path.as(String.class)), "%" + strToSearch);
             case EQUAL:
-                if(searchCriteria.getFilterKey().equals("deptName")){
-                    System.out.println(searchCriteria.getValue());
-                    return cb.equal(departmentJoin(root).<String>get(searchCriteria.getFilterKey()), searchCriteria.getValue());
-                }
-                return cb.equal(root.get(searchCriteria.getFilterKey()), searchCriteria.getValue());
-
+                return cb.equal(path, searchCriteria.getValue());
             case NOT_EQUAL:
-                if(searchCriteria.getFilterKey().equals("deptName")){
-                    return cb.notEqual(departmentJoin(root).<String>get(searchCriteria.getFilterKey()), searchCriteria.getValue() );
-                }
-                return cb.notEqual(root.get(searchCriteria.getFilterKey()), searchCriteria.getValue());
-
+                return cb.notEqual(path, searchCriteria.getValue());
             case NUL:
-                return cb.isNull(root.get(searchCriteria.getFilterKey()));
-
+                return cb.isNull(path);
             case NOT_NULL:
-                return cb.isNotNull(root.get(searchCriteria.getFilterKey()));
-
+                return cb.isNotNull(path);
             case GREATER_THAN:
-                return cb.greaterThan(root.<String> get(searchCriteria.getFilterKey()), searchCriteria.getValue().toString());
-
+                return cb.greaterThan(path.as(String.class), searchCriteria.getValue().toString());
             case GREATER_THAN_EQUAL:
-                return cb.greaterThanOrEqualTo(root.<String> get(searchCriteria.getFilterKey()), searchCriteria.getValue().toString());
-
+                return cb.greaterThanOrEqualTo(path.as(String.class), searchCriteria.getValue().toString());
             case LESS_THAN:
-                return cb.lessThan(root.<String> get(searchCriteria.getFilterKey()), searchCriteria.getValue().toString());
-
+                return cb.lessThan(path.as(String.class), searchCriteria.getValue().toString());
             case LESS_THAN_EQUAL:
-                return cb.lessThanOrEqualTo(root.<String> get(searchCriteria.getFilterKey()), searchCriteria.getValue().toString());
+                return cb.lessThanOrEqualTo(path.as(String.class), searchCriteria.getValue().toString());
+            default:
+                return null;
         }
-        return null;
     }
 
-    private Join<Employee, Department> departmentJoin(Root<Employee> root){
-        return root.join("department");
+    /**
+     * Resolves the proper path for a given field.
+     * This determines whether the field belongs to the root entity (Employee) or is part of a related entity (e.g., Department).
+     */
+    private Path<?> resolvePath(Root<Employee> root, String filterKey) {
+        // Map of related entities and their corresponding root joins, dynamic enough to add more fields in the future
+        Map<String, String> fieldMappings = Map.of("deptName", "department" // Example of supporting multiple related field mappings
+        );
 
+        if (fieldMappings.containsKey(filterKey)) {
+            Join<Employee, ?> join = root.join(fieldMappings.get(filterKey));
+            return join.get(filterKey);
+        }
+
+        // Default case: Assume that the field is part of the Employee entity
+        return root.get(filterKey);
     }
+
 }
