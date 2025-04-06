@@ -1,8 +1,8 @@
 package com.api.advancedsearch.controller;
 
-import com.api.advancedsearch.advSearch.EmpSpecificationBuilder;
 import com.api.advancedsearch.advSearch.EmployeeSearchDto;
 import com.api.advancedsearch.advSearch.SearchCriteria;
+import com.api.advancedsearch.advSearch.SpecificationBuilder;
 import com.api.advancedsearch.domain.Employee;
 import com.api.advancedsearch.service.EmployeeService;
 import com.api.advancedsearch.utils.APIResponse;
@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/v1")
@@ -39,7 +40,7 @@ public class AdvSearchController {
                                                        @RequestBody EmployeeSearchDto employeeSearchDto){
         System.out.println("employeeSearchDto:" + employeeSearchDto);
         APIResponse apiResponse = new APIResponse();
-        EmpSpecificationBuilder builder = new EmpSpecificationBuilder();
+        SpecificationBuilder<Employee> builder = new SpecificationBuilder<>();
         List<SearchCriteria> criteriaList = employeeSearchDto.getSearchCriteriaList();
         if(criteriaList != null){
             criteriaList.forEach(x-> {x.setDataOption(employeeSearchDto.getDataOption());
@@ -52,7 +53,11 @@ public class AdvSearchController {
                                    .ascending().and(Sort.by("emplastNm"))
                                    .ascending().and(Sort.by("department")).ascending());
 
-        Page<Employee> employeePage = empService.findBySearchCriteria(builder.build(), page);
+        Map<String, String> employeeFieldMappings = Map.of(
+                "deptName", "department"
+        );
+
+        Page<Employee> employeePage = empService.findBySearchCriteria(builder.build(employeeFieldMappings), page);
 
         apiResponse.setData(employeePage.toList());
         apiResponse.setResponseCode(HttpStatus.OK);

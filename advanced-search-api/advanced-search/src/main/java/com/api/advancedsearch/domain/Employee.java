@@ -1,10 +1,12 @@
 package com.api.advancedsearch.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Data
@@ -12,7 +14,11 @@ import java.util.Date;
 @NoArgsConstructor
 @Entity
 @Table(name = "EMPLOYEE")
-public class Employee {
+@NamedEntityGraph(
+        name = "Employee.department",
+        attributeNodes = @NamedAttributeNode("department")
+)
+public class Employee implements Serializable {
 
     @Id
     @Column(name = "EMP_ID")
@@ -39,8 +45,9 @@ public class Employee {
     @Column(name = "COMMISSION", nullable = true)
     private double commission;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DEPT_ID")
+    @JsonIgnore
     private Department department;
 
 }
